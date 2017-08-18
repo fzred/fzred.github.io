@@ -5,7 +5,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://www.lred.me/"/>
-  <updated>2017-08-04T07:50:12.000Z</updated>
+  <updated>2017-08-18T04:14:51.000Z</updated>
   <id>http://www.lred.me/</id>
   
   <author>
@@ -14,6 +14,46 @@
   </author>
   
   <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>记一次JavaScript的性能调优</title>
+    <link href="http://www.lred.me/2017/08/18/%E8%AE%B0%E4%B8%80%E6%AC%A1JavaScript%E7%9A%84%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98/"/>
+    <id>http://www.lred.me/2017/08/18/记一次JavaScript的性能调优/</id>
+    <published>2017-08-18T02:43:58.000Z</published>
+    <updated>2017-08-18T04:14:51.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>之前写了个JS浮点运算的库 <a href="https://github.com/fzred/calculatorjs/" target="_blank" rel="external">https://github.com/fzred/calculatorjs/</a> ，被人吐槽运算速度慢，写的时候确实没关心性能问题。</p>
+<p>calculatorjs 运算过程分三步</p>
+<ol>
+<li>词法分析</li>
+<li>语法分析</li>
+<li>数值运算</li>
+</ol>
+<p>分析后发现<strong>数值运算</strong>这个阶段性能比我想象中的差得多，所以优先从这个地方下手。</p>
+<p>优化前100W次的加法运算 0.22+0.33 耗时2秒，单纯的运算这效率确实太慢了。<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">console.time(<span class="string">'precisionCalc add'</span>)</div><div class="line"><span class="keyword">for</span> (<span class="built_in">let</span> i = 1; i &lt; 1000000; i++) &#123;</div><div class="line">  precisionCalc.add(l, r)</div><div class="line">&#125;</div><div class="line">console.timeEnd(<span class="string">'precisionCalc add'</span>)</div></pre></td></tr></table></figure></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">precisionCalc add: 2006.562ms</div></pre></td></tr></table></figure>
+<p><a href="https://github.com/fzred/calculatorjs/blob/eabff6822803a26765632b7ad81ba5bd4eb5d967/src/precisionCalc.js" target="_blank" rel="external">优化前代码</a><br><a href="https://github.com/fzred/calculatorjs/blob/8e9c5c86016c9f07137efc350459501e43d27128/src/precisionCalc.js" target="_blank" rel="external">优化后代码</a></p>
+<p>开始分析代码<br>优化前代码逻辑里，一次运算会调用4次<strong>split</strong>，用来分割整数跟小数，这个完全可以优化到只调用2次。看一下100W次<code>&#39;0.22&#39;.split(&#39;.&#39;)</code> 需要多少时间 <strong>202.155ms</strong>，一次运算调用4次就是<strong>800ms</strong>左右，太慢。<br>所以自己实现的分割整数跟小数的split，调整了下逻辑，使其只调用两次。</p>
+<p>看26行 <code>Array(f + 1).join(&#39;0&#39;)</code>，作用是给小数点移位是填充0的。测试下 <code>Array(5).join(&#39;0&#39;)</code> 执行100W次平均需要 <strong>280ms</strong>，一次运算会调用两次，这也是可优化的点。所以我干脆直接用十个0的字符串代替 <strong>‘0000000000’</strong> ，偷懒了，留下一个隐患，小数超过10位运算就会出现问题。</p>
+<p>主要消耗性能的就是这两个地方，还有其他的一些调整就不一一赘述了。<a href="https://github.com/fzred/calculatorjs/commit/8e9c5c86016c9f07137efc350459501e43d27128#diff-7475cae84adc3e34ada13fffd8556173" target="_blank" rel="external">看commit</a></p>
+<p>最终优化后跑一开始的测试代码的执行时间<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">precisionCalc add: 346.614ms</div></pre></td></tr></table></figure></p>
+<p>相比一开始的<strong>2006.562ms</strong>，这是个很大的提升。同时也反映了一开始的代码确实写得不好。</p>
+<p>来看看big.js的运算速度<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">console</span>.time(<span class="string">'big add'</span>)</div><div class="line"><span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">1</span>; i &lt; <span class="number">1000000</span>; i++) &#123;</div><div class="line"> <span class="keyword">new</span> Big(l).plus(r)</div><div class="line">&#125;</div><div class="line"><span class="built_in">console</span>.timeEnd(<span class="string">'big add'</span>)</div></pre></td></tr></table></figure></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">big add: 1076.701ms</div></pre></td></tr></table></figure>
+<p>运算上，calculatorjs是要比big.js快3倍的。</p>
+<p>词法分析，语法分析比较消耗性能，所以我单独把运算的API开放出来，来应对一些需要高性能的场景。<br><figure class="highlight lsl"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">calc.add(<span class="number">0.1</span>, <span class="number">0.2</span>) <span class="comment">// 0.3</span></div><div class="line">calc.sub(<span class="number">0.1</span>, <span class="number">0.2</span>) <span class="comment">// -0.1</span></div><div class="line">calc.mul(<span class="number">0.1</span>, <span class="number">0.2</span>) <span class="comment">// 0.02</span></div><div class="line">calc.div(<span class="number">0.1</span>, <span class="number">0.2</span>) <span class="comment">// 0.5</span></div></pre></td></tr></table></figure></p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;之前写了个JS浮点运算的库 &lt;a href=&quot;https://github.com/fzred/calculatorjs/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;https://github.com/fzred/calculatorjs/&lt;/a&gt; 
+    
+    </summary>
+    
+      <category term="笔记" scheme="http://www.lred.me/categories/%E7%AC%94%E8%AE%B0/"/>
+    
+    
+  </entry>
   
   <entry>
     <title>编程先学会提问</title>
@@ -826,41 +866,6 @@
     
     </summary>
     
-    
-  </entry>
-  
-  <entry>
-    <title>angularjs控制器之间通信，事件通知服务</title>
-    <link href="http://www.lred.me/2015/05/15/angularjs%E6%8E%A7%E5%88%B6%E5%99%A8%E4%B9%8B%E9%97%B4%E9%80%9A%E4%BF%A1%EF%BC%8C%E4%BA%8B%E4%BB%B6%E9%80%9A%E7%9F%A5%E6%9C%8D%E5%8A%A1/"/>
-    <id>http://www.lred.me/2015/05/15/angularjs控制器之间通信，事件通知服务/</id>
-    <published>2015-05-15T15:32:36.000Z</published>
-    <updated>2017-08-04T02:19:27.000Z</updated>
-    
-    <content type="html"><![CDATA[<!--22-->
-<a id="more"></a>
-<p>最近在使用angular时，发现控制器间的通信还是挺常见的，然后总结写了个简单的service，事件通知服务。</p>
-<p>关于angular里service的概念，这里就不分享了，可以看下这篇文章： Angular.js Services</p>
-<p>service要记住一点就是所有的services都是singleton(单例)的，service更多的是做一些业务逻辑，数据交互。当然，利用单例这特点也可以用来做不同控制器间的通信。控制器间的通信也有多种做法：AngularJS控制器controller如何通信？。</p>
-<p>利用作用域继承的方式。即子控制器继承父控制器中的内容</p>
-<p>基于事件的方式。即$on,$emit,$boardcast这三种方式</p>
-<p>服务方式。写一个服务的单例然后通过注入来使用</p>
-<p>第一种还是有些局限性，第二种用起来并不太方便（或者个人不习惯），于是利用service实现了基于事件的通知方式。</p>
-<h3 id="上代码"><a href="#上代码" class="headerlink" title="上代码"></a>上代码</h3><figure class="highlight javascript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div></pre></td><td class="code"><pre><div class="line"><span class="comment">//提供给不同控制器的通信</span></div><div class="line">app.factory(<span class="string">"EventService"</span>, <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</div><div class="line">    <span class="keyword">var</span> onEventFunc = &#123;&#125;;</div><div class="line">    <span class="keyword">return</span> &#123;</div><div class="line">        on: <span class="function"><span class="keyword">function</span> (<span class="params">type, f</span>) </span>&#123;</div><div class="line">            <span class="comment">//事件绑定</span></div><div class="line">            onEventFunc[type] = f;</div><div class="line">        &#125;, <span class="attr">trigger</span>: <span class="function"><span class="keyword">function</span> (<span class="params">type, data</span>) </span>&#123;</div><div class="line">            <span class="comment">//触发事件</span></div><div class="line">            <span class="keyword">for</span> (<span class="keyword">var</span> item <span class="keyword">in</span> onEventFunc) &#123;</div><div class="line">                <span class="keyword">if</span> (item == type)</div><div class="line">                    onEventFunc[item](data);</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">&#125;);</div><div class="line"> </div><div class="line"><span class="comment">//使用</span></div><div class="line"><span class="function"><span class="keyword">function</span> <span class="title">test1Controller</span>(<span class="params">EventService</span>) </span>&#123;</div><div class="line">    EventService.on(<span class="string">"newMess"</span>, <span class="function"><span class="keyword">function</span> (<span class="params">data</span>) </span>&#123;</div><div class="line">        <span class="comment">//console.log(data);</span></div><div class="line">    &#125;);</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">function</span> <span class="title">test2Controller</span>(<span class="params">$scope,EventService</span>) </span>&#123;</div><div class="line">    $scope.send = <span class="function"><span class="keyword">function</span> (<span class="params">data</span>) </span>&#123;</div><div class="line">        <span class="comment">//这里是我在项目中使用的一个例子，当发送了新消息，通知另一个控制器</span></div><div class="line"> </div><div class="line">        <span class="comment">//触发事件，通知</span></div><div class="line">        EventService.trigger(<span class="string">"newMess"</span>, data);</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>可以基于这思路去扩展实现更复杂的业务。找个时间分享下利用这思路实现的webscoket事件分发。</p>
-<p>时候不早，洗澡去，明天又要上班，最近忙成dog。</p>
-<p><img src="/imgs/1431267587649000000.png" alt=""></p>
-]]></content>
-    
-    <summary type="html">
-    
-      &lt;!--22--&gt;
-    
-    </summary>
-    
-      <category term="前端" scheme="http://www.lred.me/categories/%E5%89%8D%E7%AB%AF/"/>
-    
-    
-      <category term="angularjs" scheme="http://www.lred.me/tags/angularjs/"/>
     
   </entry>
   
