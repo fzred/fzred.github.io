@@ -1,22 +1,22 @@
 # ----
 # Site
 
-title: Aperture Template
-url: "https://cosmic-hippopotamus.cloudvent.net"
+title: 山中方大侠
+url: "https://photos.fangzenghong.com"
 baseurl:
 google_analytics_key:
 
 # Values for the jekyll-seo-tag gem (https://github.com/jekyll/jekyll-seo-tag)
-logo: /siteicon.png
-description: Photography portfolio template for Jekyll.
+logo: 
+description: 摄影作品展示
 author:
   name:
   email:
   twitter: # twitter username without the @ symbol
 social:
-  name: Aperture Template
+  name: 山中方大侠
   links:
-    - https://github.com/CloudCannon/aperture-jekyll-template
+    - https://photos.fangzenghong.com
 
 # -----
 # Build
