@@ -141,26 +141,6 @@ body.overlay-active {
   body.overlay-active .overlay {
     display: block; }
 
-.split-content {
-  display: flex;
-  flex-wrap: wrap; }
-  .split-content .side-content {
-    flex: 1 0 300px;
-    order: 2;
-    display: flex;
-    align-items: center; }
-    .split-content .side-content p:first-child {
-      margin-top: 0; }
-  .split-content .side-photo {
-    display: flex;
-    align-items: center;
-    flex: 0 1 400px;
-    margin: 0 20px 30px 0; }
-    .split-content .side-photo img {
-      display: block;
-      margin: 0 auto;
-      height: 100%; }
-
 form {
   max-width: 600px; }
 
