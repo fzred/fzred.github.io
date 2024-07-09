@@ -48,6 +48,7 @@ exclude:
   - Gemfile.lock
   - README.md
   - LICENCE
+  - deploy.sh
 
 # -----------
 # CloudCannon
