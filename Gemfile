@@ -10,3 +10,7 @@ end
 # gem "webrick", "~> 1.8"
 
 # gem "rexml", "~> 3.3"
+
+gem "jekyll-image-size", "~> 1.2"
+
+gem "fastimage", "~> 2.3"
