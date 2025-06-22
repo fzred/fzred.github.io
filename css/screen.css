@@ -1,0 +1,138 @@
+html {
+  background: #101010;
+  color: #fefefe;
+  font-family: 'Rosario', sans-serif;
+  color: #fefefe; }
+
+a {
+  color: #7bc6ff;
+  text-decoration: none; }
+
+p {
+  font-size: 1.1em;
+  line-height: 1.6em; }
+
+nav {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-right: -15px; }
+  nav a {
+    padding: 15px;
+    text-decoration: none;
+    color: #b2b2b2;
+    transition: color .2s ease; }
+    nav a.active {
+      color: #fefefe; }
+    nav a:hover {
+      color: #fefefe; }
+
+img {
+  max-width: 100%; }
+
+footer {
+  text-align: center;
+  color: #aaa;
+  margin: 23px 0; }
+
+html, body {
+  padding: 0;
+  margin: 0; }
+
+* {
+  box-sizing: border-box; }
+
+.header {
+  padding: 0 50px;
+  display: flex; }
+
+@media screen and (max-width: 500px) {
+  .header {
+    padding: 0 20px; } }
+@media screen and (max-width: 360px) {
+  .header {
+    display: block; } }
+header h1 a {
+  text-decoration: none;
+  color: #fefefe; }
+
+.text-width {
+  max-width: 1000px;
+  margin: 0 auto; }
+
+.text-center {
+  text-align: center; }
+
+form {
+  max-width: 600px; }
+
+input, select, textarea {
+  border-radius: 6px;
+  background: #fff;
+  font-family: 'Rosario', sans-serif; }
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    box-shadow: 0 0 2px #fff; }
+
+input[type="submit"] {
+  background: #fff;
+  cursor: pointer;
+  border: 1px solid #666;
+  color: #333;
+  text-decoration: none;
+  padding: 5px 10px;
+  display: inline-flex;
+  align-items: flex-end;
+  margin: 0;
+  font-size: .8em; }
+  input[type="submit"]:hover {
+    background: #7bc6ff; }
+
+input[type="submit"] {
+  margin-top: 25px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  font-size: 1.2em; }
+
+input[type="text"], input[type="email"], textarea {
+  display: block;
+  width: 100%;
+  font-size: 1.1em;
+  padding: 10px;
+  box-sizing: border-box;
+  border: 1px solid #666;
+  resize: none; }
+
+textarea {
+  height: 150px; }
+
+label {
+  margin: 20px 0 5px 0;
+  display: block; }
+
+legend {
+  display: none; }
+
+.contain {
+  border: 0;
+  background: 0;
+  padding: 0;
+  margin: 0; }
+  @media (min-width: 450px) {
+    .contain {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between; }
+      .contain .split {
+        flex: 1;
+        margin: 0 10px 0 0; }
+        .contain .split + .split {
+          margin: 0 0 0 10px; } }
+
+select {
+  width: 100%;
+  height: 43px;
+  background: #fff;
+  border-color: rgba(0, 0, 0, 0);
+  font-size: 1em; }
