@@ -14,3 +14,6 @@ end
 gem "jekyll-image-size", "~> 1.2"
 
 gem "fastimage", "~> 2.3"
+
+# 限制 ffi 版本以兼容较低版本的 rubygems
+gem "ffi", "< 1.17"
